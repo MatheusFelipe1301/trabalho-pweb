@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ===== VARIAVEIS - MODO ESCURO (padrao) ===== */
+:root {
+  --red: #E3350D;
+  --red-dark: #9B2007;
+  --red-light: #FF5533;
+  --bg: #0a0a0a;
+  --bg2: #111111;
+  --card-bg: #161616;
+  --card-border: #2c2c2c;
+  --text: #f0f0f0;
+  --text-muted: #777;
+  --input-bg: #1e1e1e;
+  --header-bg: #0f0f0f;
+  --filters-bg: #0d0d0d;
+}
+
+/* ===== MODO CLARO ===== */
+body.light {
+  --bg: #f0f0f0;
+  --bg2: #e4e4e4;
+  --card-bg: #ffffff;
+  --card-border: #d0d0d0;
+  --text: #111111;
+  --text-muted: #666;
+  --input-bg: #ffffff;
+  --header-bg: #1a1a1a;
+  --filters-bg: #e8e8e8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* =====================
+   SPLASH
+===================== */
+#splash {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  z-index: 9999;
+}
+
+.pokedex-device {
+  width: min(300px, 88vw);
+  background: linear-gradient(160deg, #cc2200, #E3350D 50%, #ff4422);
+  border-radius: 20px 20px 50% 50% / 20px 20px 55px 55px;
+  padding: 28px 24px 32px;
+  box-shadow: 0 0 60px rgba(227,53,13,0.45), 0 20px 50px rgba(0,0,0,0.8);
+  animation: popIn 1s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  opacity: 0;
+}
+
+@keyframes popIn {
+  from { opacity:0; transform: scale(0.4) rotate(-15deg); }
+  to   { opacity:1; transform: scale(1) rotate(0deg); }
+}
+
+.device-lights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.light-big {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #8af 45%, #36c);
+  border: 4px solid rgba(255,255,255,0.9);
+  box-shadow: 0 0 18px rgba(80,140,255,0.9);
+  animation: lightPulse 2s ease-in-out infinite 1s;
+}
+
+@keyframes lightPulse {
+  0%,100% { box-shadow: 0 0 18px rgba(80,140,255,0.9); }
+  50%      { box-shadow: 0 0 32px rgba(255,255,255,1), 0 0 50px rgba(80,140,255,0.7); }
+}
+
+.light-sm {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.8);
+}
+.l-r { background: radial-gradient(circle at 35% 30%, #f88, #f00); }
+.l-y { background: radial-gradient(circle at 35% 30%, #ff8, #fc0); }
+.l-g { background: radial-gradient(circle at 35% 30%, #8f8, #0c0); }
+
+.device-bar {
+  width: 100%; height: 12px;
+  background: #1a1a1a;
+  position: relative;
+  margin-bottom: 14px;
+}
+.device-bar::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+  width: 38px; height: 38px;
+  background: #2a2a2a;
+  border-radius: 50%;
+  border: 3px solid #3a3a3a;
+}
+
+.device-screen {
+  background: #0a180a;
+  border: 3px solid #0a280a;
+  border-radius: 8px;
+  padding: 18px 12px;
+  text-align: center;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 0 8px rgba(0,200,0,0.08);
+}
+
+.screen-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(10px, 3.2vw, 15px);
+  color: #9EFF57;
+  letter-spacing: 2px;
+  line-height: 2;
+  text-shadow: 0 0 12px #9EFF57, 0 0 24px rgba(158,255,87,0.4);
+  animation: glow 1.4s ease-in-out infinite alternate 1s;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 10px #9EFF57; }
+  to   { text-shadow: 0 0 22px #9EFF57, 0 0 44px rgba(158,255,87,0.5); }
+}
+
+.btn-open {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(8px, 2.6vw, 12px);
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 16px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 0 var(--red-dark), 0 0 28px rgba(227,53,13,0.4);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+  animation: slideUp 0.5s ease 1.7s both;
+}
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.btn-open:hover  { background: var(--red-light); transform: translateY(-2px); box-shadow: 0 8px 0 var(--red-dark), 0 0 40px rgba(227,53,13,0.55); }
+.btn-open:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--red-dark); }
+
+/* =====================
+   APP
+===================== */
+#app { display: none; min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--red-dark);
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 3px 24px rgba(227,53,13,0.18);
+  transition: background 0.3s;
+}
+
+.logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(12px, 3vw, 20px);
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000;
+}
+.logo span { color: var(--red); text-shadow: 2px 2px 0 #000, 0 0 18px rgba(227,53,13,0.5); }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.counter {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  background: rgba(128,128,128,0.07);
+  border: 1px solid var(--card-border);
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+.btn-theme {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--card-border);
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-theme:hover { background: var(--red); border-color: var(--red); color: #fff; transform: rotate(20deg) scale(1.1); }
+
+/* FILTERS */
+.filters {
+  background: var(--filters-bg);
+  border-bottom: 1px solid var(--card-border);
+  padding: 14px 22px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  transition: background 0.3s;
+}
+
+.fgroup { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 155px; }
+.flabel { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; }
+
+.finput, .fselect {
+  background: var(--input-bg);
+  border: 1.5px solid var(--card-border);
+  color: var(--text);
+  padding: 9px 13px;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px; font-weight: 600;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
+}
+.finput:focus, .fselect:focus { border-color: var(--red); box-shadow: 0 0 10px rgba(227,53,13,0.2); }
+.fselect option { background: var(--input-bg); color: var(--text); }
+
+.btn-reset {
+  padding: 9px 18px;
+  border: 1.5px solid var(--red-dark);
+  background: transparent;
+  color: var(--red);
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-reset:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* GRID */
+.wrap { padding: 22px; max-width: 1380px; margin: 0 auto; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s, border-color 0.2s, background 0.3s;
+  animation: fadeUp 0.4s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(227,53,13,0.05), transparent 65%);
+  pointer-events: none;
+}
+.card:hover {
+  transform: translateY(-8px) scale(1.03);
+  border-color: var(--red);
+  box-shadow: 0 14px 36px rgba(227,53,13,0.22), 0 0 0 1px rgba(227,53,13,0.12);
+}
+
+.card-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.card-img-box {
+  width: 96px; height: 96px;
+  margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.card-img-box::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(227,53,13,0.06), transparent 70%);
+}
+.card-img {
+  width: 88px; height: 88px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45));
+  transition: transform 0.3s;
+}
+.card:hover .card-img { transform: scale(1.12) translateY(-4px); }
+
+.card-name {
+  font-size: 16px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.tags { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+.tag {
+  font-size: 9px; font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+.empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 60px 20px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 2.2;
+}
+
+/* MODAL */
+.overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.84);
+  backdrop-filter: blur(5px);
+  z-index: 500;
+  align-items: center; justify-content: center;
+  padding: 18px;
+}
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-top: 3px solid var(--red);
+  border-radius: 18px;
+  width: 100%; max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  transition: background 0.3s;
+}
+@keyframes modalPop {
+  from { opacity:0; transform:scale(0.78) translateY(36px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+
+.modal-top {
+  padding: 22px 26px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.modal-title { font-family: 'Press Start 2P', monospace; font-size: clamp(13px,3vw,19px); color: var(--red); text-transform: capitalize; margin-bottom: 4px; text-shadow: 0 0 16px rgba(227,53,13,0.3); }
+.modal-num   { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--text-muted); margin-bottom: 10px; }
+.modal-types { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.btn-close {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: rgba(128,128,128,0.08);
+  color: var(--text-muted);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.btn-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+.modal-img-area {
+  text-align: center;
+  padding: 18px 18px 8px;
+}
+.modal-img-circle {
+  width: 190px; height: 190px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(227,53,13,0.07), transparent 70%);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-img {
+  width: 170px; height: 170px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 22px rgba(0,0,0,0.45));
+  animation: floating 3s ease-in-out infinite;
+}
+@keyframes floating {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-11px); }
+}
+
+.modal-body { padding: 0 26px 26px; }
+
+.modal-desc {
+  background: rgba(128,128,128,0.06);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px; line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 18px;
+  transition: background 0.3s;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.info-box {
+  background: rgba(128,128,128,0.06);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  transition: background 0.3s;
+}
+.info-lbl { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+.info-val { font-size: 16px; font-weight: 700; color: var(--text); }
+
+.sec-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--red); margin-bottom: 12px; letter-spacing: 1px; }
+
+.stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.stat-lbl  { font-size: 11px; font-weight: 700; color: var(--text-muted); width: 76px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.8px; }
+.stat-num  { font-size: 13px; font-weight: 700; color: var(--text); width: 34px; text-align: right; flex-shrink: 0; }
+.stat-bar  { flex: 1; height: 7px; background: rgba(128,128,128,0.14); border-radius: 4px; overflow: hidden; }
+.stat-fill { height: 100%; border-radius: 4px; width: 0; transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); }
+
+.abilities-section { margin-top: 18px; }
+.abil-list { display: flex; gap: 7px; flex-wrap: wrap; }
+.abil-tag {
+  background: rgba(128,128,128,0.09);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 5px 13px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+  transition: background 0.3s;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--red-dark); border-radius: 3px; }
+
+@media (max-width: 480px) {
+  .filters { flex-direction: column; }
+  .fgroup  { min-width: unset; width: 100%; }
+  .grid    { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .card-img { width: 70px; height: 70px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div id="splash">
+  <div class="pokedex-device">
+    <div class="device-lights">
+      <div class="light-big"></div>
+      <div class="light-sm l-r"></div>
+      <div class="light-sm l-y"></div>
+      <div class="light-sm l-g"></div>
+    </div>
+    <div class="device-bar"></div>
+    <div class="device-screen">
+      <div class="screen-text">POKÉDEX<br>v 2.0</div>
+    </div>
+  </div>
+  <button class="btn-open" onclick="abrirApp()">&#9654; ABRIR POKÉDEX</button>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+
+  <header>
+    <div class="logo">POKÉ<span>DEX</span></div>
+    <div class="header-right">
+      <div class="counter" id="counter">14 POKÉMONS</div>
+      <button class="btn-theme" id="btnTheme" onclick="alternarTema()" title="Modo claro/escuro">🌙</button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="fgroup">
+      <span class="flabel">🔍 Nome</span>
+      <input type="text" class="finput" id="fNome" placeholder="Ex: Gengar..." oninput="filtrar()">
+    </div>
+    <div class="fgroup">
+      <span class="flabel"># Número</span>
+      <input type="number" class="finput" id="fNum" placeholder="Ex: 487..." oninput="filtrar()">
+    </div>
+    <div class="fgroup">
+      <span class="flabel">⚡ Tipo</span>
+      <select class="fselect" id="fTipo" onchange="filtrar()">
+        <option value="">Todos os tipos</option>
+        <option value="fire">Fogo</option>
+        <option value="water">Água</option>
+        <option value="grass">Planta</option>
+        <option value="ghost">Fantasma</option>
+        <option value="dragon">Dragão</option>
+        <option value="dark">Sombrio</option>
+        <option value="steel">Aço</option>
+        <option value="flying">Voador</option>
+        <option value="normal">Normal</option>
+        <option value="poison">Venenoso</option>
+        <option value="fighting">Lutador</option>
+        <option value="psychic">Psíquico</option>
+        <option value="ground">Terra</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetar()">↺ Limpar</button>
+  </div>
+
+  <div class="wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="overlay" id="overlay" onclick="fecharModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-top">
+      <div>
+        <div class="modal-title" id="mNome"></div>
+        <div class="modal-num"   id="mNum"></div>
+        <div class="modal-types" id="mTipos"></div>
+      </div>
+      <button class="btn-close" onclick="fecharDireto()">&#10005;</button>
+    </div>
+    <div class="modal-img-area">
+      <div class="modal-img-circle">
+        <img class="modal-img" id="mImg" src="" alt="">
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="mDesc"></div>
+      <div class="info-grid"  id="mInfo"></div>
+      <div>
+        <div class="sec-title">&#9670; BASE STATS</div>
+        <div id="mStats"></div>
+      </div>
+      <div class="abilities-section">
+        <div class="sec-title" style="margin-top:16px">&#9670; HABILIDADES</div>
+        <div class="abil-list" id="mAbils"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== DADOS ===== */
+var POKEMONS = [
+  {
+    id: 387, name: "Turtwig",
+    types: ["grass"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/387.png",
+    desc: "Um Pokémon que se alimenta de luz solar. Quando precisa de água, a casca em sua cabeça fica seca. Originário da Região de Sinnoh.",
+    height: "0,4 m", weight: "10,2 kg", category: "Tartaruga Folha", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Overgrow", "Shell Armor"],
+    stats: {HP:55, ATK:68, DEF:64, "Sp.ATK":45, "Sp.DEF":55, VEL:31}
+  },
+  {
+    id: 389, name: "Torterra",
+    types: ["grass","ground"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/389.png",
+    desc: "Povos primitivos acreditavam que a Terra era um enorme Torterra. A árvore em suas costas serve de lar para Pokémon menores.",
+    height: "2,2 m", weight: "310,0 kg", category: "Terra Continente", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Overgrow", "Shell Armor"],
+    stats: {HP:95, ATK:109, DEF:105, "Sp.ATK":75, "Sp.DEF":85, VEL:56}
+  },
+  {
+    id: 390, name: "Chimchar",
+    types: ["fire"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/390.png",
+    desc: "Sua chama traseira é alimentada por gases em seu estômago e nunca se apaga, mesmo sob fortes chuvas. É ágil como um macaco.",
+    height: "0,5 m", weight: "6,2 kg", category: "Macaco-chama", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Blaze", "Iron Fist"],
+    stats: {HP:44, ATK:58, DEF:44, "Sp.ATK":58, "Sp.DEF":44, VEL:61}
+  },
+  {
+    id: 392, name: "Infernape",
+    types: ["fire","fighting"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/392.png",
+    desc: "Usa um estilo de combate único baseado em habilidades variadas. A chama na cabeça nunca se apaga e representa sua força inabalável.",
+    height: "1,2 m", weight: "55,0 kg", category: "Macaco-Chama", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Blaze", "Iron Fist"],
+    stats: {HP:76, ATK:104, DEF:71, "Sp.ATK":104, "Sp.DEF":71, VEL:108}
+  },
+  {
+    id: 393, name: "Piplup",
+    types: ["water"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/393.png",
+    desc: "Orgulhoso e temperamental. Mesmo quando pede ajuda, reluta em admitir dificuldades. Seu pelo denso o protege do frio intenso.",
+    height: "0,4 m", weight: "5,2 kg", category: "Pinguim", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Torrent", "Defiant"],
+    stats: {HP:53, ATK:51, DEF:53, "Sp.ATK":61, "Sp.DEF":56, VEL:40}
+  },
+  {
+    id: 395, name: "Empoleon",
+    types: ["water","steel"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/395.png",
+    desc: "Reina sobre os oceanos gelados. Com suas asas de aço, pode rachar icebergs facilmente. Nunca tolera ataques a seu território.",
+    height: "1,7 m", weight: "84,5 kg", category: "Imperador", gen: "IV (Sinnoh)", gender: "M / F",
+    abilities: ["Torrent", "Defiant"],
+    stats: {HP:84, ATK:86, DEF:88, "Sp.ATK":111, "Sp.DEF":101, VEL:60}
+  },
+  {
+    id: 94, name: "Gengar",
+    types: ["ghost","poison"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png",
+    desc: "Vive em sombras de quartos escuros. Diz-se que é a sombra de quem foi deixado para trás. Reduz a temperatura local ao aparecer.",
+    height: "1,5 m", weight: "40,5 kg", category: "Sombra", gen: "I (Kanto)", gender: "M / F",
+    abilities: ["Cursed Body", "Levitate"],
+    stats: {HP:60, ATK:65, DEF:60, "Sp.ATK":130, "Sp.DEF":75, VEL:110}
+  },
+  {
+    id: 487, name: "Giratina",
+    types: ["ghost","dragon"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/487.png",
+    desc: "Foi banido para o Mundo Distorcido por sua violência. Observa o mundo real através de um espelho. É o senhor da matéria escura.",
+    height: "4,5 m", weight: "750,0 kg", category: "Renegado", gen: "IV (Sinnoh)", gender: "Sem gênero",
+    abilities: ["Pressure", "Telepathy"],
+    stats: {HP:150, ATK:100, DEF:120, "Sp.ATK":100, "Sp.DEF":120, VEL:90}
+  },
+  {
+    id: 491, name: "Darkrai",
+    types: ["dark"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/491.png",
+    desc: "Para se defender, provoca pesadelos nos que se aproximam. Embora não seja malévolo, sua presença causa sonhos aterrorizantes.",
+    height: "1,5 m", weight: "50,5 kg", category: "Pesadelo", gen: "IV (Sinnoh)", gender: "Sem gênero",
+    abilities: ["Bad Dreams"],
+    stats: {HP:70, ATK:90, DEF:90, "Sp.ATK":135, "Sp.DEF":90, VEL:125}
+  },
+  {
+    id: 823, name: "Corviknight",
+    types: ["flying","steel"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/823.png",
+    desc: "Considerado o Pokémon mais poderoso do céu em Galar. Seu corpo metálico é quase impenetrável. Trabalhou como táxi aéreo para treinadores.",
+    height: "2,2 m", weight: "75,0 kg", category: "Corvo de Ferro", gen: "VIII (Galar)", gender: "M / F",
+    abilities: ["Pressure", "Unnerve", "Mirror Armor"],
+    stats: {HP:98, ATK:87, DEF:105, "Sp.ATK":53, "Sp.DEF":85, VEL:67}
+  },
+  {
+    id: 493, name: "Arceus",
+    types: ["normal"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/493.png",
+    desc: "Segundo lendas, moldou o universo com seus mil braços. É considerado um deus pelos habitantes de Sinnoh e está além da compreensão humana.",
+    height: "3,2 m", weight: "320,0 kg", category: "Alfa", gen: "IV (Sinnoh)", gender: "Sem gênero",
+    abilities: ["Multitype"],
+    stats: {HP:120, ATK:120, DEF:120, "Sp.ATK":120, "Sp.DEF":120, VEL:120}
+  },
+  {
+    id: 484, name: "Palkia",
+    types: ["water","dragon"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/484.png",
+    desc: "Possui o poder de distorcer o espaço. Dizem que vive em um universo paralelo. Habita uma dimensão espelhada estável ao nosso mundo.",
+    height: "4,2 m", weight: "336,0 kg", category: "Espaço Temporal", gen: "IV (Sinnoh)", gender: "Sem gênero",
+    abilities: ["Pressure", "Telepathy"],
+    stats: {HP:90, ATK:120, DEF:100, "Sp.ATK":150, "Sp.DEF":120, VEL:100}
+  },
+  {
+    id: 658, name: "Greninja",
+    types: ["water","dark"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/658.png",
+    desc: "Cria shuriken de água comprimida para atacar. Se move tão rápido que mal pode ser visto. Usa a língua como um cachecol característico.",
+    height: "1,5 m", weight: "40,0 kg", category: "Ninja", gen: "VI (Kalos)", gender: "M / F",
+    abilities: ["Torrent", "Protean", "Battle Bond"],
+    stats: {HP:72, ATK:95, DEF:67, "Sp.ATK":103, "Sp.DEF":71, VEL:122}
+  },
+  {
+    id: 483, name: "Dialga",
+    types: ["steel","dragon"],
+    img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/483.png",
+    desc: "Possui o poder de controlar o tempo. O fluxo do tempo começa quando Dialga nasce. É adorado como um deus na região de Sinnoh.",
+    height: "5,4 m", weight: "683,0 kg", category: "Temporal", gen: "IV (Sinnoh)", gender: "Sem gênero",
+    abilities: ["Pressure", "Telepathy"],
+    stats: {HP:100, ATK:120, DEF:120, "Sp.ATK":150, "Sp.DEF":100, VEL:90}
+  }
+];
+
+var TIPO_COR = {
+  fire:"#E8512A", water:"#3A9FD5", grass:"#4CAF50",
+  ghost:"#7B68EE", dragon:"#6A28F0", dark:"#5C4033",
+  steel:"#78909C", flying:"#5BA3D0", normal:"#9E9E7A",
+  poison:"#A040A0", psychic:"#F85888", fighting:"#C03028",
+  rock:"#B8A038", ground:"#D97A34", ice:"#5BC5C5",
+  electric:"#D4AF00", bug:"#8FA820"
+};
+
+var TIPO_PT = {
+  fire:"Fogo", water:"Água", grass:"Planta", ghost:"Fantasma",
+  dragon:"Dragão", dark:"Sombrio", steel:"Aço", flying:"Voador",
+  normal:"Normal", poison:"Venenoso", psychic:"Psíquico",
+  fighting:"Lutador", rock:"Pedra", ground:"Terra", ice:"Gelo",
+  electric:"Elétrico", bug:"Inseto"
+};
+
+var STAT_COR = {
+  HP:"#FF5454", ATK:"#F5A54A", DEF:"#F5D84A",
+  "Sp.ATK":"#7AABF5", "Sp.DEF":"#80D080", VEL:"#F570AA"
+};
+
+/* ===== FUNÇÕES ===== */
+function tagTipo(t, grande) {
+  var cor = TIPO_COR[t] || "#888";
+  var nome = TIPO_PT[t] || t;
+  var pad = grande ? "5px 13px" : "3px 9px";
+  var sz  = grande ? "12px" : "9px";
+  return '<span class="tag" style="background:'+cor+';padding:'+pad+';font-size:'+sz+'">'+nome+'</span>';
+}
+
+function renderGrid(lista) {
+  var g = document.getElementById("grid");
+  document.getElementById("counter").textContent = lista.length + " POKÉMON" + (lista.length !== 1 ? "S" : "");
+  if (!lista.length) {
+    g.innerHTML = '<div class="empty">&#9888; Nenhum Pokémon encontrado...</div>';
+    return;
+  }
+  g.innerHTML = lista.map(function(p, i) {
+    return '<div class="card" onclick="abrirModal('+p.id+')" style="animation-delay:'+(i*0.05)+'s">'
+      + '<div class="card-num">#'+pad(p.id,4)+'</div>'
+      + '<div class="card-img-box"><img class="card-img" src="'+p.img+'" alt="'+p.name+'" loading="lazy" onerror="this.src=\'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+p.id+'.png\'"></div>'
+      + '<div class="card-name">'+p.name+'</div>'
+      + '<div class="tags">'+p.types.map(function(t){return tagTipo(t,false);}).join('')+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function pad(n, len) {
+  var s = String(n);
+  while (s.length < len) s = "0" + s;
+  return s;
+}
+
+function filtrar() {
+  var nome = document.getElementById("fNome").value.toLowerCase().trim();
+  var num  = document.getElementById("fNum").value.trim();
+  var tipo = document.getElementById("fTipo").value;
+  var res  = POKEMONS.filter(function(p) {
+    return (!nome || p.name.toLowerCase().indexOf(nome) >= 0)
+        && (!num  || String(p.id).indexOf(num) >= 0)
+        && (!tipo || p.types.indexOf(tipo) >= 0);
+  });
+  renderGrid(res);
+}
+
+function resetar() {
+  document.getElementById("fNome").value = "";
+  document.getElementById("fNum").value  = "";
+  document.getElementById("fTipo").value = "";
+  renderGrid(POKEMONS);
+}
+
+function abrirModal(id) {
+  var p = POKEMONS.filter(function(x){return x.id===id;})[0];
+  if (!p) return;
+
+  document.getElementById("mNome").textContent = p.name;
+  document.getElementById("mNum").textContent  = "#" + pad(p.id, 4);
+  document.getElementById("mTipos").innerHTML  = p.types.map(function(t){return tagTipo(t,true);}).join('');
+  document.getElementById("mImg").src = p.img;
+  document.getElementById("mImg").alt = p.name;
+  document.getElementById("mDesc").textContent = p.desc;
+
+  document.getElementById("mInfo").innerHTML =
+    '<div class="info-box"><div class="info-lbl">Altura</div><div class="info-val">'+p.height+'</div></div>'
+    +'<div class="info-box"><div class="info-lbl">Peso</div><div class="info-val">'+p.weight+'</div></div>'
+    +'<div class="info-box"><div class="info-lbl">Categoria</div><div class="info-val" style="font-size:13px">'+p.category+'</div></div>'
+    +'<div class="info-box"><div class="info-lbl">Geração</div><div class="info-val" style="font-size:12px">'+p.gen+'</div></div>'
+    +'<div class="info-box"><div class="info-lbl">Gênero</div><div class="info-val" style="font-size:13px">'+p.gender+'</div></div>';
+
+  document.getElementById("mStats").innerHTML = Object.keys(p.stats).map(function(k) {
+    var v = p.stats[k];
+    var pct = Math.min(v / 255 * 100, 100);
+    var cor = STAT_COR[k] || "#aaa";
+    return '<div class="stat-row">'
+      +'<span class="stat-lbl">'+k+'</span>'
+      +'<span class="stat-num">'+v+'</span>'
+      +'<div class="stat-bar"><div class="stat-fill" data-pct="'+pct+'" style="background:'+cor+'"></div></div>'
+      +'</div>';
+  }).join('');
+
+  document.getElementById("mAbils").innerHTML = p.abilities.map(function(a) {
+    return '<span class="abil-tag">'+a+'</span>';
+  }).join('');
+
+  document.getElementById("overlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+
+  setTimeout(function() {
+    document.querySelectorAll(".stat-fill").forEach(function(el) {
+      el.style.width = el.getAttribute("data-pct") + "%";
+    });
+  }, 60);
+}
+
+function fecharModal(e) {
+  if (e.target === document.getElementById("overlay")) fecharDireto();
+}
+function fecharDireto() {
+  document.getElementById("overlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function alternarTema() {
+  document.body.classList.toggle("light");
+  document.getElementById("btnTheme").textContent = document.body.classList.contains("light") ? "☀️" : "🌙";
+}
+
+function abrirApp() {
+  var splash = document.getElementById("splash");
+  splash.style.transition = "opacity 0.45s ease, transform 0.45s ease";
+  splash.style.opacity = "0";
+  splash.style.transform = "scale(1.06)";
+  setTimeout(function() {
+    splash.style.display = "none";
+    var app = document.getElementById("app");
+    app.style.display = "block";
+    renderGrid(POKEMONS);
+  }, 450);
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") fecharDireto();
+});
+</script>
+</body>
+</html>
